@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Harry Potter House Quiz</title>
+<style>
+  :root {
+    --bg: #0e1a2b;
+    --panel: rgba(20, 28, 48, 0.85);
+    --gold: #d4af37;
+    --text: #f4f1e8;
+    --accent: #b48a2c;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Georgia", "Times New Roman", serif;
+    color: var(--text);
+    background:
+      radial-gradient(ellipse at top, #1c2a4a 0%, #0e1a2b 50%, #050a14 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 720px;
+    background: var(--panel);
+    border: 2px solid var(--gold);
+    border-radius: 16px;
+    box-shadow: 0 0 40px rgba(212, 175, 55, 0.25);
+    padding: 40px 32px;
+  }
+
+  h1 {
+    text-align: center;
+    margin: 0 0 8px;
+    font-size: 2.2rem;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+
+  .subtitle {
+    text-align: center;
+    margin: 0 0 28px;
+    font-style: italic;
+    opacity: 0.85;
+  }
+
+  .progress {
+    height: 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--gold));
+    transition: width 0.4s ease;
+  }
+
+  .question {
+    font-size: 1.25rem;
+    margin: 16px 0 24px;
+    line-height: 1.4;
+  }
+
+  .question-number {
+    color: var(--gold);
+    font-weight: bold;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .answers {
+    display: grid;
+    gap: 12px;
+  }
+
+  .answer {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1rem;
+    text-align: left;
+    padding: 14px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .answer:hover {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: var(--gold);
+    transform: translateX(4px);
+  }
+
+  .result {
+    text-align: center;
+    padding: 20px 0;
+  }
+  .result h2 {
+    font-size: 1.2rem;
+    margin: 0 0 8px;
+    opacity: 0.85;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .house-name {
+    font-size: 3rem;
+    margin: 16px 0;
+    font-weight: bold;
+    letter-spacing: 2px;
+  }
+  .house-crest {
+    font-size: 5rem;
+    margin: 16px 0;
+  }
+  .house-desc {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    margin: 16px auto 28px;
+    max-width: 520px;
+    opacity: 0.95;
+  }
+
+  .restart {
+    background: var(--gold);
+    color: #1a1a1a;
+    border: none;
+    padding: 14px 28px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+  }
+  .restart:hover {
+    background: var(--accent);
+    transform: scale(1.05);
+  }
+
+  /* House colors */
+  .gryffindor { color: #ae0001; }
+  .gryffindor .house-crest { color: #d3a625; }
+  .slytherin  { color: #2a623d; }
+  .slytherin .house-crest  { color: #aaaaaa; }
+  .ravenclaw  { color: #222f5b; }
+  .ravenclaw .house-crest  { color: #946b2d; }
+  .hufflepuff { color: #ecb939; }
+  .hufflepuff .house-crest { color: #372e29; }
+
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>The Sorting Hat</h1>
+    <p class="subtitle">"Let me have a look at your mind..."</p>
+
+    <div id="quiz">
+      <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+      <div class="question-number" id="question-number"></div>
+      <div class="question" id="question-text"></div>
+      <div class="answers" id="answers"></div>
+    </div>
+
+    <div id="result" class="result hidden">
+      <h2>You belong in...</h2>
+      <div class="house-crest" id="house-crest"></div>
+      <div class="house-name" id="house-name"></div>
+      <p class="house-desc" id="house-desc"></p>
+      <button class="restart" id="restart-btn">Sort the next student</button>
+    </div>
+  </div>
+
+<script>
+  const questions = [
+    {
+      q: "It's Friday night. What's your ideal way to spend it?",
+      a: [
+        { text: "Out doing something new — concert, party, anything spontaneous", house: "gryffindor" },
+        { text: "Cozy at home with a book, podcast, or documentary", house: "ravenclaw" },
+        { text: "Dinner or a movie with close friends or family", house: "hufflepuff" },
+        { text: "Working on a side project that could pay off later", house: "slytherin" }
+      ]
+    },
+    {
+      q: "Which trait do you value most in yourself?",
+      a: [
+        { text: "Courage", house: "gryffindor" },
+        { text: "Curiosity", house: "ravenclaw" },
+        { text: "Loyalty", house: "hufflepuff" },
+        { text: "Drive", house: "slytherin" }
+      ]
+    },
+    {
+      q: "You're starting a new job. What excites you most?",
+      a: [
+        { text: "The challenges and chance to prove yourself", house: "gryffindor" },
+        { text: "Learning new skills and ideas", house: "ravenclaw" },
+        { text: "Meeting your new teammates", house: "hufflepuff" },
+        { text: "The career opportunities it opens up", house: "slytherin" }
+      ]
+    },
+    {
+      q: "A friend cancels plans at the last minute. You...",
+      a: [
+        { text: "Tell them straight up that it bothered you", house: "gryffindor" },
+        { text: "Think about why and whether it's a pattern", house: "ravenclaw" },
+        { text: "Say no worries and ask if they're okay", house: "hufflepuff" },
+        { text: "Make a mental note and adjust how much you rely on them", house: "slytherin" }
+      ]
+    },
+    {
+      q: "Which kind of holiday sounds best?",
+      a: [
+        { text: "An adventurous trip — hiking, surfing, road-tripping somewhere new", house: "gryffindor" },
+        { text: "A city break full of museums, history and local food", house: "ravenclaw" },
+        { text: "A relaxed weekend away with people you love", house: "hufflepuff" },
+        { text: "Somewhere stylish that makes for great photos and stories", house: "slytherin" }
+      ]
+    },
+    {
+      q: "What's your usual role in a group project?",
+      a: [
+        { text: "The one who takes charge and gets things moving", house: "gryffindor" },
+        { text: "The one who researches and figures out how it should work", house: "ravenclaw" },
+        { text: "The one who keeps everyone on track and supported", house: "hufflepuff" },
+        { text: "The one who makes sure the result actually looks impressive", house: "slytherin" }
+      ]
+    },
+    {
+      q: "How do you usually handle a disagreement with someone close to you?",
+      a: [
+        { text: "Address it directly, even if it's uncomfortable", house: "gryffindor" },
+        { text: "Think it through carefully and explain your reasoning", house: "ravenclaw" },
+        { text: "Listen patiently and try to find common ground", house: "hufflepuff" },
+        { text: "Pick your moment, then make your case strategically", house: "slytherin" }
+      ]
+    },
+    {
+      q: "If you had a free afternoon, you'd probably...",
+      a: [
+        { text: "Try something you've never done before", house: "gryffindor" },
+        { text: "Go down a Wikipedia or YouTube rabbit hole", house: "ravenclaw" },
+        { text: "Call someone you've been meaning to catch up with", house: "hufflepuff" },
+        { text: "Get ahead on something that matters for next week", house: "slytherin" }
+      ]
+    },
+    {
+      q: "Which of these would bother you most?",
+      a: [
+        { text: "Being seen as someone who backed down", house: "gryffindor" },
+        { text: "Being seen as uninformed or shallow", house: "ravenclaw" },
+        { text: "Letting down someone who counted on you", house: "hufflepuff" },
+        { text: "Being overlooked or underestimated", house: "slytherin" }
+      ]
+    },
+    {
+      q: "You see someone drop a 20 on the floor in a busy shop. You...",
+      a: [
+        { text: "Tap them on the shoulder right away", house: "gryffindor" },
+        { text: "Pick it up and look around to find who dropped it", house: "ravenclaw" },
+        { text: "Hand it to staff so they can return it", house: "hufflepuff" },
+        { text: "Honestly? You'd probably keep it", house: "slytherin" }
+      ]
+    }
+  ];
+
+  const houses = {
+    gryffindor: {
+      name: "Gryffindor",
+      crest: "\u{1F981}",
+      desc: "Where dwell the brave at heart. Daring, nerve, and chivalry set Gryffindors apart. You face challenges head-on and stand up for what you believe in."
+    },
+    slytherin: {
+      name: "Slytherin",
+      crest: "\u{1F40D}",
+      desc: "Cunning folk use any means to achieve their ends. Ambitious, resourceful, and determined — you are a natural leader with a sharp mind and bold dreams."
+    },
+    ravenclaw: {
+      name: "Ravenclaw",
+      crest: "\u{1F985}",
+      desc: "Wit beyond measure is man's greatest treasure. Wise, creative, and endlessly curious — you value knowledge and originality above all else."
+    },
+    hufflepuff: {
+      name: "Hufflepuff",
+      crest: "\u{1F9A1}",
+      desc: "Just and loyal, patient and true. Hard-working and unafraid of toil — you are the heart that holds everything together."
+    }
+  };
+
+  let currentQuestion = 0;
+  let scores = { gryffindor: 0, slytherin: 0, ravenclaw: 0, hufflepuff: 0 };
+
+  const quizEl = document.getElementById("quiz");
+  const resultEl = document.getElementById("result");
+  const questionNumberEl = document.getElementById("question-number");
+  const questionTextEl = document.getElementById("question-text");
+  const answersEl = document.getElementById("answers");
+  const progressBarEl = document.getElementById("progress-bar");
+  const houseCrestEl = document.getElementById("house-crest");
+  const houseNameEl = document.getElementById("house-name");
+  const houseDescEl = document.getElementById("house-desc");
+  const restartBtn = document.getElementById("restart-btn");
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function renderQuestion() {
+    const q = questions[currentQuestion];
+    questionNumberEl.textContent = `Question ${currentQuestion + 1} of ${questions.length}`;
+    questionTextEl.textContent = q.q;
+    progressBarEl.style.width = `${(currentQuestion / questions.length) * 100}%`;
+
+    answersEl.innerHTML = "";
+    shuffle(q.a).forEach(answer => {
+      const btn = document.createElement("button");
+      btn.className = "answer";
+      btn.textContent = answer.text;
+      btn.addEventListener("click", () => selectAnswer(answer.house));
+      answersEl.appendChild(btn);
+    });
+  }
+
+  function selectAnswer(house) {
+    scores[house] += 1;
+    currentQuestion += 1;
+    if (currentQuestion >= questions.length) {
+      showResult();
+    } else {
+      renderQuestion();
+    }
+  }
+
+  function showResult() {
+    progressBarEl.style.width = "100%";
+
+    let winner = "gryffindor";
+    let max = -1;
+    const tied = [];
+    for (const key in scores) {
+      if (scores[key] > max) {
+        max = scores[key];
+        tied.length = 0;
+        tied.push(key);
+      } else if (scores[key] === max) {
+        tied.push(key);
+      }
+    }
+    winner = tied[Math.floor(Math.random() * tied.length)];
+
+    const house = houses[winner];
+    resultEl.classList.remove("gryffindor", "slytherin", "ravenclaw", "hufflepuff");
+    resultEl.classList.add(winner);
+    houseCrestEl.textContent = house.crest;
+    houseNameEl.textContent = house.name;
+    houseDescEl.textContent = house.desc;
+
+    quizEl.classList.add("hidden");
+    resultEl.classList.remove("hidden");
+  }
+
+  function restart() {
+    currentQuestion = 0;
+    scores = { gryffindor: 0, slytherin: 0, ravenclaw: 0, hufflepuff: 0 };
+    resultEl.classList.add("hidden");
+    quizEl.classList.remove("hidden");
+    renderQuestion();
+  }
+
+  restartBtn.addEventListener("click", restart);
+
+  renderQuestion();
+</script>
+</body>
+</html>
